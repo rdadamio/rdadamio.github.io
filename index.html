@@ -1,221 +1,131 @@
 <!DOCTYPE html>
-<html lang = "en">
-   <head>
-      <script src = "https://d3js.org/d3.v4.min.js"></script>
-   </head>
-   <style>
-        body { font-family: Arial; }
-     </style>
+<html> 
+        <meta charset="utf-8">
+        <style>
+        
+        path {
+            stroke: rgb(255, 255, 255);
+            stroke-width: 0.25px;
+            fill: grey;
+        }
+        
+        .svg-container {
+            display: inline-block;
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            vertical-align: top;
+            overflow: hidden;
+        }
+        .svg-content {
+            display: inline-block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
 
-   <body>
-        <h2 class = "myclass">Message1</h2>
-        <div id = "svgcontainer">
-            </div>
-            <script language = "javascript">
-               var width = 300;
-               var height = 300;
-               var svg = d3.select("#svgcontainer")
-                  .append("svg")
-                  .attr("width", width)
-                  .attr("height", height);
-               svg.append("line")
-                  .attr("x1", 100)
-                  .attr("y1", 100)
-                  .attr("x2", 200)
-                  .attr("y2", 200)
-                  .style("stroke", "rgb(255,0,0)")
-                  .style("stroke-width", 2);
-            </script>
-            <h3>Simple transitions</h3>
-            <script>
-               d3.select("body").transition().style("background-color", "lightpink").delay(2000).duration(5000); 
-               // make the background-color lightblue.transition()
-               //.style("background-color", "gray");
-               // make the background-color gray
-            </script>
-        <ul id = "list">
-                <li></li>
-                <li></li>
-             </ul>
-             <input type = "button" name = "remove" value = "Remove fourth value" 
-         onclick = "javascript:remove()" />
-      
-      <script>
-         d3.select("#list").selectAll("li")
-            .data([10, 20, 21, 32, 25])
-            .text(function(d) 
-               { return "This is pre-existing element and the value is " + d; })
-            .enter()
-            .append("li")
-            .text(function(d) 
-               { return "This is dynamically created element and the value is " + d; });
-             
-         function remove() {
-            d3.selectAll("li")
-            .data([10, 20, 21, 25])
-            .exit()
-            .remove()
-         }
-         var width = 300;
-         var height = 300;
-         //Create SVG element
-         var svg = d3.select("#svgcontainer")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
-         //Append circle 
-         svg.append("circle")
-            .attr("cx", 20)
-            .attr("cy", 50)
-            .attr("r", 20)
-            .attr("fill", "rgb(162, 214, 221)");
-      </script>
-        <div class="myclass">
-                Hello World!    
-             </div>
-             <script>
-                 d3.selectAll(".myclass").attr("style", "color: navy");
-             </script>
-        <div id = "svgcontainer">
-                <svg width = "300" height = "300">
-                   <line x1 = "100" y1 = "100" 
-                      x2 = "200" y2 = "200" style = "stroke:rgb(162, 214, 221);
-                      stroke-width:2"/>
-                </svg>
-             </div>
-   </br>
-       <svg width = "500" height = "500">
-            <rect x = "0" y = "0" width = "500" height = "500" style = "fill:rgb(197, 40, 132)"></rect>
-         </svg>
-
-               <div class="goodbye">
-                    This is the end of my code!
-                </div> 
-                <script>
-                        d3.select(".goodbye").attr("style","color:rgb(255,60,60)");
-                </script>
-   </body>
-   <script type = "text/javascript" src = "https://d3js.org/d3.v4.min.js"></script>
-      <style>
-         svg rect {
-            fill: rgb(136, 255, 0);
-         }
-         
-         svg text {
-            fill: rgb(255, 0, 212);
-            font: 12px sans-serif;
-            text-anchor: end;
-         }
-      </style>
-   </head>
-
-   <body>
-      <script>
-         var data = [10, 5, 12, 15];
-         
-         var width = 300 
-            scaleFactor = 20, 
-            barHeight = 30;
-         
-         var graph = d3.select("body")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", barHeight * data.length);
-         
-         var bar = graph.selectAll("g")
-            .data(data)
-            .enter()
-            .append("g")
-            .attr("transform", function(d, i) {
-               return "translate(0," + i * barHeight + ")";
-            });
-         bar.append("rect").attr("width", function(d) {
-            return d * scaleFactor;
-         })
-         
-         .attr("height", barHeight - 1);
-         
-         bar.append("text")
-            .attr("x", function(d) { return (d*scaleFactor); })
-            .attr("y", barHeight / 2)
-            .attr("dy", ".35em")
-            .text(function(d) { return d; });
-      </script>
-   </body>
-   <script type = "text/javascript" src = "https://d3js.org/d3.v4.min.js"></script>
-   <style> 
-      .line {
-         fill: none;
-         stroke: green;
-         stroke-width: 5px;
-      }
-   </style>
-</head>
-
-<head>
-        <script type = "text/javascript" src = "https://d3js.org/d3.v4.min.js"></script>
-        <style> 
-           .line {
-              fill: none;
-              stroke: green;
-              stroke-width: 5px;
-           }
+        #tooltip-container{
+            background: #eee;
+            box-shadow: 0 0 5px #999999;
+            color: #333;
+            display: none;
+            font-size: 12px;      
+            padding: 10px;
+            position: absolute;
+            text-align: center;
+            right: 200px;
+            top: 300px;
+            width: 100px;
+            height: 40px;
+            z-index: 10;
+        }
+        
         </style>
-     </head>
-  
-     <body>
+    <head>
+        <title>Loading a Map</title>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="https://d3js.org/d3-color.v1.min.js"></script>
+        <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+        <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <div id="container" class="svg-container"></div>
+        <div id="tooltip-container"></div>
+    </head>
+
+    <body>
+
+        <svg viewBox="0 0 500 500"></svg>
+        <svg preserveAspectRatio="xMidYMid meet"></svg>
+
         <script>
-           // set the dimensions and margins of the graph
-           var margin = {top: 20, right: 20, bottom: 30, left: 50},
-           width = 960 - margin.left - margin.right,
-           height = 500 - margin.top - margin.bottom;
-  
-           // set the ranges
-           var x = d3.scaleTime().range([0, width]);
-           var y = d3.scaleLinear().range([height, 0]);
-  
-           // define the line
-           var valueline = d3.line()
-              .x(function(d) { return x(d.year); })
-              .y(function(d) { return y(d.population); });
-  
-           // append the svg obgect to the body of the page
-           // appends a 'group' element to 'svg'
-           // moves the 'group' element to the top left margin
-           var svg = d3.select("body").append("svg")
-              .attr("width", width + margin.left + margin.right)
-              .attr("height", height + margin.top + margin.bottom)
-              .append("g").attr("transform",
-                 "translate(" + margin.left + "," + margin.top + ")");
-  
-           // Get the data
-           d3.csv("population.csv", function(error, data) {
-              if (error) throw error;
-              // format the data
-              data.forEach(function(d) {
-                 d.year = d.year;
-                 d.population = +d.population;
-              });
-  
-              // Scale the range of the data
-              x.domain(d3.extent(data, function(d) { return d.year; }));
-              y.domain([0, d3.max(data, function(d) { return d.population; })]);
-  
-              // Add the valueline path.
-              svg.append("path")
-                 .data([data])
-                 .attr("class", "line")
-                 .attr("d", valueline);
-  
-              // Add the X Axis
-              svg.append("g")
-                 .attr("transform", "translate(0," + height + ")")
-                 .call(d3.axisBottom(x));
-  
-              // Add the Y Axis
-              svg.append("g")
-                 .call(d3.axisLeft(y));
-           });
+            var svg = d3.select("div#container")
+                .append("svg")
+                .attr("preserveAspectRatio", "xMinYMin meet")
+                .attr("viewBox", "0 0 300 300")
+                .classed("svg-content", true);
+        
+
+            var projection = d3.geo.equirectangular()
+
+            var path = d3.geo.path()
+                .projection(projection);
+            var g = svg.append("g");
+
+            d3.json("state_map.json", function (error, topology) {
+                g.selectAll("path")
+                .data(topology.features)
+                .enter()
+                .append("path")
+                .attr("d", path);
+
+                d3.csv("milers.csv", function(error, data) {
+                    g.selectAll("circle")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {
+                    return projection([d.long, d.lat])[0];
+                })
+                    .attr("cy", function(d) {
+                    return projection([d.long, d.lat])[1];
+                })
+                    .attr("r", 3)
+                    .style("fill", "red")
+                    .on("mouseover", function (d) {
+                        $("#tooltip-container").show();
+                        loadInfo(d);
+                    })
+                    .on("mouseout", function (d) {
+                        $("#tooltip-container").hide();
+                    })
+                });
+            });
+
+            function loadInfo(d) {
+                var html = "";
+                var tooltip = d3.select("#tooltip-container");
+
+                d3.csv("milers.csv", function (error, data) {
+                    for (var i in data) {
+                        html = d.name + ", Time: " + d.time + ", Rank: " + d.rank};
+                        tooltip.html(html);
+                    }
+                )};
+            
+
+            var zoom = d3.behavior.zoom()
+                .on("zoom",function() {
+                g.attr("transform","translate("+
+                d3.event.translate.join(",")+")scale("+d3.event.scale+")");
+                g.selectAll("path")
+                .attr("d", path.projection(projection));
+            });
+
+            svg.call(zoom)
+
+            
         </script>
-     </body>
+
+    </body>
 </html>
