@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.node {
+  cursor: pointer;
+}
+
+.node circle {
+    stroke: #2f5e39;
+    fill: #61c076;
+    stroke-width: 3px;
+}
+
+.node text {
+  font: 12px sans-serif;
+}
+
+.link {
+    fill: none;
+    stroke: #a35633;
+    stroke-width: 6px;
+}
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+// set the dimensions and margins of the diagram
+var margin = {top: 20, right: 90, bottom: 30, left: 90},
+  width = 1600 - margin.left - margin.right,
+  height = 1200 - margin.top - margin.bottom;
+
+var i = 0,
+    duration = 750,
+    root;
+
+var tree = d3.layout.tree()
+    .size([height, width]);
+
+var tooltip = d3.select("body")
+    .append("div")
+	.style("position", "absolute")
+    .style("text-align", "center")
+    .style("width", "150px")
+    .style("background", "lightsteelblue")
+	.style("z-index", "10")
+	.style("visibility", "hidden")
+    .style("padding", "2px")
+    .style("border", "0px")
+    .style("border-radius", "8px")
+    .style("font", "12px sans-serif")
+	.text("a simple tooltip");
+
+var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.x, height-d.y]; });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.right + margin.left)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("APCATtree3.json", function(error, flare) {
+  if (error) throw error;
+
+  root = flare;
+  root.y0 = height / 2;
+  root.x0 = height-0;
+
+var nodes = tree.nodes(root);
+	function collapse(d) {
+		if (d.children && d.depth > 1) { // doesn't work as it exits at parent depth
+			d._children = d.children;
+			d._children.forEach(collapse);
+			d.children = null;
+		}
+        else if (d.children) {
+        d.children.forEach(collapse);
+    }
+	}
+    root.children.forEach(collapse);//iterate each node and collapse excluding node zero
+	update(root);
+
+  root.children.forEach(collapse);
+  update(root);
+});
+
+d3.select(self.frameElement).style("height", "800px");
+
+function update(source) {
+
+  // Compute the new tree layout.
+  var nodes = tree.nodes(root).reverse(),
+    links = tree.links(nodes);
+
+  // Normalize for fixed-depth.
+  nodes.forEach(function(d) { d.y = d.depth * 250; });
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+        .attr("r", 1e-6)
+        .style("fill", function(d) { if (d.depth >= 2) {return d._children ? "#61c076" : "#fff"; }
+        else {return "#a35633"}})
+        .style("stroke", function(d) { if (d.depth >= 2) {return "#2f5e39" }
+        else {return "#a35633"}});
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.x + "," + (height-d.y) + ")"; });
+
+  nodeUpdate.select("circle")
+    .attr("r", function(d) {
+        if (d.depth >= 2) {return (5-d.depth)*3+5}
+        else {return 8}})
+        .style("fill", function(d) { if (d.depth >= 2) {return d._children ? "#61c076" : "#fff"; }
+        else {return "#a35633"}})
+        .style("stroke", function(d) { if (d.depth >= 2) {return "#2f5e39" }
+        else {return "#a35633"}});
+
+node.on("mouseover", function(d){tooltip.text(d.name + ": " + d.tagline); if (d.depth >= 2) {return tooltip.style("visibility", "visible");}
+        else {return tooltip.style("visibility", "hidden");}})
+	.on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
+	.on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.x + "," + (height-source.y) + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        var o = {x: source.y0, y: (height-source.x0)};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .style("stroke-width", function(d) { return (5-d.target.depth)*5; })
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = height-d.y;
+    d.y0 = d.x;
+  });
+}
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+
+//add legend to give instructions
+//add profinciency to json file
+
+</script>
