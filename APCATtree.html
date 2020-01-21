@@ -3,8 +3,8 @@
 <style> /* set the CSS */
     
 .node circle {
-  fill: #fff;
-  stroke: rgb(97, 192, 118);
+  stroke: #2f5e39;
+  fill: rgb(97, 192, 118);
   stroke-width: 3px;
 }
 
@@ -17,7 +17,6 @@
 .link {
   fill: none;
   stroke: rgb(163, 86, 51);
-  stroke-width: 5px;
 }
 
 </style>
@@ -33,9 +32,14 @@ var margin = {top: 20, right: 90, bottom: 30, left: 90},
   width = 1600 - margin.left - margin.right,
   height = 1500 - margin.top - margin.bottom;
 
+var root;
 // declares a tree layout and assigns the size
+//var treemap = d3.tree()
+//  .size([height, width]);
+
 var treemap = d3.tree()
-  .size([height, width]);
+    .separation(function(a, b) { return ((a.parent == root) && (b.parent == root)) ? 4 : 5; })
+    .size([height, width]);
 
 var tooltip = d3.select("body")
     .append("div")
@@ -83,7 +87,8 @@ var link = g.selectAll(".link")
        + "C" + (d.x + d.parent.x) / 2 + "," + (height - d.y)
        + " " + (d.x + d.parent.x) / 2 + "," + (height - d.parent.y)
        + " " + d.parent.x + "," + (height - d.parent.y);
-       });
+       })
+    .attr("stroke-width", function(d) {return (d.height*7+3)});
 
 // adds each node as a group
 var node = g.selectAll(".node")
@@ -93,11 +98,15 @@ var node = g.selectAll(".node")
       return "node" + 
       (d.children ? " node--internal" : " node--leaf"); })
     .attr("transform", function(d) { 
-      return "translate(" + d.x + "," + (height-d.y) + ")"; })
-console.log(nodes)
+      return "translate(" + d.x + "," + (height-d.y) + ")"; });
+
 // adds the circle to the node
 node.append("circle")
     .attr("r", 10)
+    .attr("r", function(d) {
+        if (d.depth >=2) {return 10}
+        else {return 0}
+    ;})
     .on("mouseover", function(d){tooltip.text(d.data.tagline); return tooltip.style("visibility", "visible");})
 	.on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
 	.on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
@@ -108,7 +117,11 @@ node.append("text")
     .attr("x", function(d) { return d.children ? -13 : 13; })
     .style("text-anchor", function(d) { 
     return d.children ? "end" : "start"; })
-    .text(function(d) { return d.data.name; });
+    .text(function(d) { return d.data.name; })
+    .style("opacity", function(d) {
+        if (d.depth >=2 && d.depth <= 3) {return 1}
+        else {return 0}
+    ;});
 
 });
     
