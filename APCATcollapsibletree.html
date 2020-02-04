@@ -8,8 +8,8 @@
 
 .node circle {
     stroke: #2f5e39;
-    fill: #61c076;
-    stroke-width: 3px;
+    fill: #b4acaa;
+    stroke-width: 5px;
 }
 
 .node text {
@@ -24,11 +24,11 @@
 
 </style>
 <body>
-<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
 // set the dimensions and margins of the diagram
-var margin = {top: 20, right: 90, bottom: 30, left: 90},
+var margin = {top: 20, right: 90, bottom: 50, left: 90},
   width = 1600 - margin.left - margin.right,
   height = 1200 - margin.top - margin.bottom;
 
@@ -56,22 +56,28 @@ var tooltip = d3.select("body")
 var diagonal = d3.svg.diagonal()
     .projection(function(d) { return [d.x, height-d.y]; });
 
+    var colorScale = d3.scale.linear()
+    .range(["#FF6050", "#FFBB4E", "#69C455"]) // or use hex values
+    .domain([1, 2, 3]);
+
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.right + margin.left)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.json("APCATtree3.json", function(error, flare) {
+d3.json("APCATTreeWithScores.json", function(error, data) {
   if (error) throw error;
 
-  root = flare;
+  root = data;
   root.y0 = height / 2;
   root.x0 = height-0;
 
 var nodes = tree.nodes(root);
-	function collapse(d) {
-		if (d.children && d.depth > 1) { // doesn't work as it exits at parent depth
+
+
+function collapse(d) {
+		if (d.children && d.depth > 2) { 
 			d._children = d.children;
 			d._children.forEach(collapse);
 			d.children = null;
@@ -79,12 +85,14 @@ var nodes = tree.nodes(root);
         else if (d.children) {
         d.children.forEach(collapse);
     }
-	}
-    root.children.forEach(collapse);//iterate each node and collapse excluding node zero
-	update(root);
+}   
 
-  root.children.forEach(collapse);
-  update(root);
+root.children.forEach(collapse);
+update(root);
+
+root.children.forEach(collapse);
+update(root);
+
 });
 
 d3.select(self.frameElement).style("height", "800px");
@@ -92,15 +100,89 @@ d3.select(self.frameElement).style("height", "800px");
 function update(source) {
 
   // Compute the new tree layout.
-  var nodes = tree.nodes(root).reverse(),
-    links = tree.links(nodes);
+  var nodes = tree.nodes(root).reverse();
+
+  //console.log(nodes[3]._children);
+  var links = tree.links(nodes);
+
+  nodes.forEach(function(d) {
+      if (d.depth==3 && d._children && d._children.length>0) {
+            var numchildren = d._children.length
+            var counter = 0;
+            var incomplete = 0;
+            for (var j = 0; j < numchildren; j++) {
+                if (d._children[j].score != 1 && d._children[j].score != 2 && d._children[j].score != 3) {
+                    incomplete = incomplete + 1
+                } else {
+                    counter = counter + d._children[j].score //count total score of child nodes
+                }
+            }
+            if (incomplete > 0.5*numchildren) {
+                d.score = NaN
+            } else {
+                var ave = counter / (numchildren - incomplete)
+                d.score = ave
+            }
+        } else if (d.depth==2 && d.children && d.children.length>0) {
+            var numchildren2 = d.children.length
+            var counter2 = 0;
+            var incomplete2 = 0;
+            for (var k = 0; k < numchildren2; k++) {
+                if (d.children[k].score >= 1 && d.children[k].score <= 3) {
+                    counter2 = counter2 + d.children[k].score //count total score of child nodes
+                } else {
+                    incomplete2 = incomplete2 + 1
+                }
+            }
+            if (incomplete2 > 0.5*numchildren2) {
+                console.log("incomplete");
+                d.score = NaN 
+            } else {
+                var ave2 = counter2 / (numchildren2 - incomplete2)
+                d.score = ave2
+            }
+            console.log(d.name);
+            console.log(ave2);
+        }
+        })
 
   // Normalize for fixed-depth.
   nodes.forEach(function(d) { d.y = d.depth * 250; });
 
   // Update the nodes…
   var node = svg.selectAll("g.node")
-      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+      .data(nodes, function(d) {
+        d.id = d.id ? d.id : ++i; 
+        // if (d.depth==3 && d.children && d.children.length>0) {
+        //     var numchildren = d.children.length
+        //     var counter = 0;
+        //     for (var j = 0; j < numchildren; j++) {
+        //     counter = counter + d.children[j].score //count total score of child nodes
+        //     }
+
+        //     var ave = counter / numchildren
+        //     console.log("ave")
+        //     console.log(ave)
+        //     d.score = d3.round(ave)
+        // } else if (d.depth==2 && d.children && d.children.length>0) {
+        //     var numchildren2 = d.children.length
+        //     var counter2 = 0;
+        //     for (var k = 0; k < numchildren2; k++) {
+        //     counter2 = counter2 + d.children[k].score //count total score of child nodes
+        //     }
+
+        //     var ave2 = counter2 / numchildren2
+        //     console.log("ave2")
+        //     console.log(ave2)
+        //     d.score = d3.round(ave2)
+        // }
+        return d.id});
+
+// var node = svg.selectAll("g.node")
+//       .data(nodes, function(d) {
+//         d.score = d.score ? d.score : 1; 
+//         console.log(d.score);
+//         return d.score});
 
   // Enter any new nodes at the parent's previous position.
   var nodeEnter = node.enter().append("g")
@@ -109,11 +191,7 @@ function update(source) {
       .on("click", click);
 
   nodeEnter.append("circle")
-        .attr("r", 1e-6)
-        .style("fill", function(d) { if (d.depth >= 2) {return d._children ? "#61c076" : "#fff"; }
-        else {return "#a35633"}})
-        .style("stroke", function(d) { if (d.depth >= 2) {return "#2f5e39" }
-        else {return "#a35633"}});
+        .attr("r", 1e-6);
 
   // Transition nodes to their new position.
   var nodeUpdate = node.transition()
@@ -122,12 +200,45 @@ function update(source) {
 
   nodeUpdate.select("circle")
     .attr("r", function(d) {
-        if (d.depth >= 2) {return (5-d.depth)*3+5}
-        else {return 8}})
-        .style("fill", function(d) { if (d.depth >= 2) {return d._children ? "#61c076" : "#fff"; }
-        else {return "#a35633"}})
+        if (d.depth >= 2) {return (5-d.depth)*10+5}
+        else {return 40}})
+    .style("fill", function(d) {
+        if(d.depth>=2 && d.score > 0) {
+            // if (d.score==1) {return "#e02e16"}
+            // else if (d.score==2) {return "#fcb721"}
+            // else if (d.score ==3) {return "#61c076"}
+            // else {return "#b4acaa"}
+            return colorScale(d.score)
+        } else if (d.depth <2) {return "#a35633"}})
+        // if (d.depth==4) {
+        //     if (d.score==1) {return "#e02e16"}
+        //     else if (d.score==2) {return "#fcb721"}
+        //     else if (d.score ==3) {return "#61c076"}
+        //     else {return "#b4acaa"}
+        // } else if (d.depth==3 && d.children && d.children.length>0) {
+        //     var numchildren = d.children.length
+        //     var counter = 0;
+        //     for (var j = 0; j < numchildren; j++) {
+        //         counter = counter + d.children[j].score //count total score of child nodes
+        //     }
+
+        //     var ave = counter / numchildren
+        //     if (d3.round(ave) == 1) { 
+        //         return 'red'
+        //     } else if (d3.round(ave)==2) {
+        //         return 'yellow'
+        //     } else if (d3.round(ave)==3) {
+        //         return 'green';
+        //     }
+        
+        // } else if (d.depth <2){
+        //     return "#a35633"
+        //     }
+        //     })
         .style("stroke", function(d) { if (d.depth >= 2) {return "#2f5e39" }
-        else {return "#a35633"}});
+        else {return "#a35633"}})
+        .style("stroke-width", function(d) { if (d.depth >= 2) {return d._children ? "10px" : "0px"; }
+        else {return "0px"}});
 
 node.on("mouseover", function(d){tooltip.text(d.name + ": " + d.tagline); if (d.depth >= 2) {return tooltip.style("visibility", "visible");}
         else {return tooltip.style("visibility", "hidden");}})
@@ -158,7 +269,7 @@ node.on("mouseover", function(d){tooltip.text(d.name + ": " + d.tagline); if (d.
   // Transition links to their new position.
   link.transition()
       .duration(duration)
-      .style("stroke-width", function(d) { return (5-d.target.depth)*5; })
+      .style("stroke-width", function(d) { return (5-d.target.depth)*20; })
       .attr("d", diagonal);
 
   // Transition exiting nodes to the parent's new position.
@@ -189,7 +300,19 @@ function click(d) {
   update(d);
 }
 
-//add legend to give instructions
-//add profinciency to json file
+//Add a legend
+svg.append("circle").attr("cx",800).attr("cy",1000).attr("r", 10).style("fill", "#69C455")
+svg.append("circle").attr("cx",800).attr("cy",1030).attr("r", 10).style("fill", "#FFBB4E")
+svg.append("circle").attr("cx",800).attr("cy",1060).attr("r", 10).style("fill", "#FF6050")
+svg.append("circle").attr("cx",800).attr("cy",1090).attr("r", 10).style("fill", "#b4acaa")
+svg.append("text").attr("x", 780).attr("y", 930).text("To expand your AP Statistics tree, click on").style("font", "25px sans-serif").attr("alignment-baseline","middle")
+svg.append("text").attr("x", 780).attr("y", 960).text("the leaves which have a dark green outline!").style("font", "25px sans-serif").attr("alignment-baseline","middle")
+svg.append("text").attr("x", 820).attr("y", 1000).text("Proficient").style("font", "25px sans-serif").attr("alignment-baseline","middle")
+svg.append("text").attr("x", 820).attr("y", 1030).text("Almost proficient").style("font", "25px sans-serif").attr("alignment-baseline","middle")
+svg.append("text").attr("x", 820).attr("y", 1060).text("Not proficient").style("font", "25px sans-serif").attr("alignment-baseline","middle")
+svg.append("text").attr("x", 820).attr("y", 1090).text("Incomplete").style("font", "25px sans-serif").attr("alignment-baseline","middle")
+
+//average of child nodes
+//linear gradient
 
 </script>
