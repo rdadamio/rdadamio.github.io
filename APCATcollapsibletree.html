@@ -22,6 +22,10 @@
     stroke-width: 6px;
 }
 
+.node path {
+    fill: #b4acaa;
+}
+
 </style>
 <body>
 <script src="//d3js.org/d3.v3.min.js"></script>
@@ -39,6 +43,7 @@ var i = 0,
 var tree = d3.layout.tree()
     .size([height, width]);
 
+//add a tooltip to show the name and description of each node
 var tooltip = d3.select("body")
     .append("div")
 	.style("position", "absolute")
@@ -56,15 +61,22 @@ var tooltip = d3.select("body")
 var diagonal = d3.svg.diagonal()
     .projection(function(d) { return [d.x, height-d.y]; });
 
-    var colorScale = d3.scale.linear()
+//create a color scale to color the nodes
+var colorScale = d3.scale.linear()
     .range(["#FF6050", "#FFBB4E", "#69C455"]) // or use hex values
     .domain([1, 2, 3]);
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.right + margin.left)
     .attr("height", height + margin.top + margin.bottom)
-  .append("g")
+    .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
 
 d3.json("APCATTreeWithScores.json", function(error, data) {
   if (error) throw error;
@@ -102,153 +114,122 @@ function update(source) {
   // Compute the new tree layout.
   var nodes = tree.nodes(root).reverse();
 
-  //console.log(nodes[3]._children);
+
   var links = tree.links(nodes);
 
+//calculate the scores for nodes based on the scores of their child nodes
   nodes.forEach(function(d) {
-      if (d.depth==3 && d._children && d._children.length>0) {
-            var numchildren = d._children.length
-            var counter = 0;
-            var incomplete = 0;
-            for (var j = 0; j < numchildren; j++) {
-                if (d._children[j].score != 1 && d._children[j].score != 2 && d._children[j].score != 3) {
-                    incomplete = incomplete + 1
+      if (d.depth==3 && d._children && d._children.length>0) { //for nodes at depth 3 (one level below leaf nodes--labeled A, B, C, etc.)
+            var numchildren = d._children.length //determine the number of child nodes
+            var counter = 0; //set up a counter to calculate sum-score of child nodes
+            var incomplete = 0; //count the number of incomplete child nodes
+            for (var j = 0; j < numchildren; j++) { //iterate through all children
+                if (d._children[j].score != 1 && d._children[j].score != 2 && d._children[j].score != 3) { //is the node incomplete? (does not have a score)
+                    incomplete = incomplete + 1 //if yes, add an incomplete node
                 } else {
-                    counter = counter + d._children[j].score //count total score of child nodes
+                    counter = counter + d._children[j].score //if no, add the score to the counter
                 }
             }
-            if (incomplete > 0.5*numchildren) {
-                d.score = NaN
+            if (incomplete > 0.5*numchildren) { //are more than half of the child nodes incomplete?
+                d.score = NaN //if yes, label the node incomplete
             } else {
                 var ave = counter / (numchildren - incomplete)
-                d.score = ave
+                d.score = ave //if no, calculate the score of the node as the average of (completed) child nodes
             }
-        } else if (d.depth==2 && d.children && d.children.length>0) {
-            var numchildren2 = d.children.length
-            var counter2 = 0;
-            var incomplete2 = 0;
-            for (var k = 0; k < numchildren2; k++) {
-                if (d.children[k].score >= 1 && d.children[k].score <= 3) {
-                    counter2 = counter2 + d.children[k].score //count total score of child nodes
+        } else if (d.depth==2 && d.children && d.children.length>0) { //for nodes at depth 2 (two levels below leaf nodes--labeled I, II, III, and IV)
+            var numchildren2 = d.children.length //determine the number of child nodes
+            var counter2 = 0; //set up a counter to calculate sum-score of child nodes
+            var incomplete2 = 0; //count the number of incomplete child nodes
+            for (var k = 0; k < numchildren2; k++) { //iterate through all children
+                if (d.children[k].score >= 1 && d.children[k].score <= 3) { //is the node's score between 1 and 3? (has a score)
+                    counter2 = counter2 + d.children[k].score //if yes, add the score to the counter 
                 } else {
-                    incomplete2 = incomplete2 + 1
+                    incomplete2 = incomplete2 + 1 //if no, add an incomplete node
                 }
             }
-            if (incomplete2 > 0.5*numchildren2) {
-                console.log("incomplete");
-                d.score = NaN 
+            if (incomplete2 > 0.5*numchildren2) { //are more than half of the child nodes incomplete?
+                d.score = NaN //if yes, label the node incomplete
             } else {
                 var ave2 = counter2 / (numchildren2 - incomplete2)
-                d.score = ave2
-            }
-            console.log(d.name);
-            console.log(ave2);
-        }
+                d.score = ave2 //if no, calculate the score of the node as the average of (completed) child nodes
+            }}
         })
 
   // Normalize for fixed-depth.
-  nodes.forEach(function(d) { d.y = d.depth * 250; });
+  nodes.forEach(function(d) { if (d.depth==4) {
+      d.y=1000} else if (d.depth ==3) {
+          d.y=650
+      } else {d.y = d.depth * 200; }});
 
   // Update the nodes…
   var node = svg.selectAll("g.node")
       .data(nodes, function(d) {
         d.id = d.id ? d.id : ++i; 
-        // if (d.depth==3 && d.children && d.children.length>0) {
-        //     var numchildren = d.children.length
-        //     var counter = 0;
-        //     for (var j = 0; j < numchildren; j++) {
-        //     counter = counter + d.children[j].score //count total score of child nodes
-        //     }
-
-        //     var ave = counter / numchildren
-        //     console.log("ave")
-        //     console.log(ave)
-        //     d.score = d3.round(ave)
-        // } else if (d.depth==2 && d.children && d.children.length>0) {
-        //     var numchildren2 = d.children.length
-        //     var counter2 = 0;
-        //     for (var k = 0; k < numchildren2; k++) {
-        //     counter2 = counter2 + d.children[k].score //count total score of child nodes
-        //     }
-
-        //     var ave2 = counter2 / numchildren2
-        //     console.log("ave2")
-        //     console.log(ave2)
-        //     d.score = d3.round(ave2)
-        // }
         return d.id});
-
-// var node = svg.selectAll("g.node")
-//       .data(nodes, function(d) {
-//         d.score = d.score ? d.score : 1; 
-//         console.log(d.score);
-//         return d.score});
 
   // Enter any new nodes at the parent's previous position.
   var nodeEnter = node.enter().append("g")
       .attr("class", "node")
-      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .attr("transform", function(d) { if(d.depth<4) {return "translate(" + source.y0 + "," + source.x0 + ")"; }
+        else {return "translate(" + (source.y0-259.0312) + "," + (source.x0-283.2188) + ")";}})
       .on("click", click);
 
+  
   nodeEnter.append("circle")
-        .attr("r", 1e-6);
+        .attr("r", function(d) {if(d.depth<4) return 1e-6});
+
+   nodeEnter.append("path")
+         .attr("d", function(d) {if (d.depth==4) return "M259.0312 283.2188 L198 336.6562 L202.5 354.6562 L142.0312 349.0312 L144.8438 411.75 L126.2812 411.75 L129.0938 349.5938 L68.0625 354.6562 L72.5625 336.6562 L11.5312 283.2188 Q16.5938 280.2656 26.4375 274.0781 L16.7344 232.875 L40.3594 237.6562 Q50.2031 239.625 51.1875 239.625 Q52.4531 239.625 61.4531 221.4844 L96.0469 254.5312 L85.7812 184.9219 L107.0156 194.0625 L135 152.4375 L163.5469 194.0625 L184.7812 184.9219 L174.375 254.5312 L209.1094 221.4844 Q219.0938 239.7656 219.9375 239.625 L254.3906 232.875 L244.125 274.0781 Q249.0469 277.3125 259.0312 283.2188 Z"})
+         .attr("style","transform: scale(.3) translate(725px,600px)")
+         //.attr("centroid", function(d) {if (d.depth==4) return [10,10]})
+
+
+
+  var randomnums = [] //create a vector of random numbers to jitter the top
+  for (x in d3.range(200)) {
+      randomnums[x] = 40*Math.random()
+  }
 
   // Transition nodes to their new position.
   var nodeUpdate = node.transition()
       .duration(duration)
-      .attr("transform", function(d) { return "translate(" + d.x + "," + (height-d.y) + ")"; });
+      .attr("transform", function(d) { 
+          if (d.depth < 4) {return "translate(" + d.x + "," + (height-d.y) + ")"; 
+          } else {return "translate(" + (d.x-259.0312) + "," + (height-d.y+randomnums[d.id]-283.2188) + ")";}}); // add if statement here to jitter nodes at depth = 4?
 
   nodeUpdate.select("circle")
     .attr("r", function(d) {
-        if (d.depth >= 2) {return (5-d.depth)*10+5}
-        else {return 40}})
+        if (d.depth > 2 && d.depth < 4) {return (5-d.depth)*10+5}
+        else if (d.depth == 1) {return 75}
+        else if (d.depth == 2) {return 50}})
     .style("fill", function(d) {
-        if(d.depth>=2 && d.score > 0) {
-            // if (d.score==1) {return "#e02e16"}
-            // else if (d.score==2) {return "#fcb721"}
-            // else if (d.score ==3) {return "#61c076"}
-            // else {return "#b4acaa"}
-            return colorScale(d.score)
-        } else if (d.depth <2) {return "#a35633"}})
-        // if (d.depth==4) {
-        //     if (d.score==1) {return "#e02e16"}
-        //     else if (d.score==2) {return "#fcb721"}
-        //     else if (d.score ==3) {return "#61c076"}
-        //     else {return "#b4acaa"}
-        // } else if (d.depth==3 && d.children && d.children.length>0) {
-        //     var numchildren = d.children.length
-        //     var counter = 0;
-        //     for (var j = 0; j < numchildren; j++) {
-        //         counter = counter + d.children[j].score //count total score of child nodes
-        //     }
+        if(d.depth>=2 && d.score > 0) { //if the depth is greater than two and the node has a score (is "complete")
+            return colorScale(d.score) //color the node based on the leaf color gradient
+        } else if (d.depth <2) {return "#a35633"}}) //otherwise, color the node brown (trunk)
+        .style("stroke", function(d) { if (d.depth >= 2) {return "#2f5e39" } //if the depth is greater than two, stroke color is dark green
+        else {return "#a35633"}}) //otherwise, stroke color is brown (trunk)
+        .style("stroke-width", function(d) { if (d.depth >= 2) {return d._children ? "10px" : "0px"; } //if the node can be expanded (has children that are not currently shown), add the stroke
+        else {return "0px"}}); //otherwise have no stroke
 
-        //     var ave = counter / numchildren
-        //     if (d3.round(ave) == 1) { 
-        //         return 'red'
-        //     } else if (d3.round(ave)==2) {
-        //         return 'yellow'
-        //     } else if (d3.round(ave)==3) {
-        //         return 'green';
-        //     }
-        
-        // } else if (d.depth <2){
-        //     return "#a35633"
-        //     }
-        //     })
-        .style("stroke", function(d) { if (d.depth >= 2) {return "#2f5e39" }
-        else {return "#a35633"}})
-        .style("stroke-width", function(d) { if (d.depth >= 2) {return d._children ? "10px" : "0px"; }
-        else {return "0px"}});
+  nodeUpdate.select("path")
+    .style("fill", function(d) {if (d.score > 0) return colorScale(d.score)}); //color the node based on the leaf color gradient
 
-node.on("mouseover", function(d){tooltip.text(d.name + ": " + d.tagline); if (d.depth >= 2) {return tooltip.style("visibility", "visible");}
-        else {return tooltip.style("visibility", "hidden");}})
+//make the tooltip (displaying the name and description of the attribute) display on mouseover
+node.on("mouseover",function(d){
+        var sel = d3.select(this);
+        sel.moveToFront();
+        tooltip.text(d.name + ": " + d.tagline); if (d.depth >= 2) {return tooltip.style("visibility", "visible");}
+        else {return tooltip.style("visibility", "hidden");}
+    })
 	.on("mousemove", function(){return tooltip.style("top", (event.pageY-10)+"px").style("left",(event.pageX+10)+"px");})
 	.on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
 
   // Transition exiting nodes to the parent's new position.
   var nodeExit = node.exit().transition()
       .duration(duration)
-      .attr("transform", function(d) { return "translate(" + source.x + "," + (height-source.y) + ")"; })
+      .attr("transform", function(d) {
+          if (d.depth < 4) { return "translate(" + source.x + "," + (height-source.y) + ")"; 
+          } else {return "translate(" + (source.x-259.0312) + "," + (height - source.y-283.2188) + ")"}})
       .remove();
 
   nodeExit.select("circle")
@@ -269,7 +250,8 @@ node.on("mouseover", function(d){tooltip.text(d.name + ": " + d.tagline); if (d.
   // Transition links to their new position.
   link.transition()
       .duration(duration)
-      .style("stroke-width", function(d) { return (5-d.target.depth)*20; })
+      .style("stroke-width", function(d) { if (d.target.depth==1 || d.target.depth==2) {return 75*(3-d.target.depth)} else {
+          return (5-d.target.depth)*20; }})
       .attr("d", diagonal);
 
   // Transition exiting nodes to the parent's new position.
@@ -312,7 +294,5 @@ svg.append("text").attr("x", 820).attr("y", 1030).text("Almost proficient").styl
 svg.append("text").attr("x", 820).attr("y", 1060).text("Not proficient").style("font", "25px sans-serif").attr("alignment-baseline","middle")
 svg.append("text").attr("x", 820).attr("y", 1090).text("Incomplete").style("font", "25px sans-serif").attr("alignment-baseline","middle")
 
-//average of child nodes
-//linear gradient
-
 </script>
+
