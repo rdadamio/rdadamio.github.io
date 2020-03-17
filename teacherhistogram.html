@@ -34,30 +34,25 @@
 		.filter(function(d){
 			return ((d != "id") & (d != "name"));
     });
+    // Get options for dropdown menu
   var elements = ["Select Assingment"];
   for (var i = 0; i < columns.length; i++) {
     elements[i+1] = columns[i]
   }
-
-    console.log(elements)
+    // Set initial selection to "Select Assignment"
 	  var selection = elements[0];
-    console.log(selection);
-    console.log(typeof(selection));
 
+    //Make a function that updates the bar chart based on the dropdown selection
     function updateChart(selection) {
-
+      //sort the selected column by score
     data = data.slice().sort((a, b) => d3.descending(parseFloat(+a[selection]), parseFloat(+b[selection])));
-    console.log(data);
-
+      //get the names and ids
     var names = data.map(function(d) { return d.name });
     var ids = data.map(function(d) { return d.id });
 
-    console.log(names);
-    console.log(ids);
-
     // X axis: scale and draw:
     var x = d3.scaleLinear()
-        .domain([0, 100])     // can use this instead of 100 to have the max of data: d3.max(data, function(d) { return +d.price })
+        .domain([0, 100])     
         .range([0, width]);
     svg.append("g")
         .attr("transform", "translate(0," + height + ")")
@@ -71,15 +66,11 @@
   
     // And apply this function to data to get the bins
     var bins = histogram(data);
-    console.log(bins);
-    console.log(bins[0][0].name);
-    console.log(bins[0].length);
-    console.log(bins.length)
 
+    //for every bin, determine which students have scores in that range
     newnames = []
     for (var j = 0; j < bins.length; j++) {
       for (var k = 0; k < bins[j].length; k++) {
-        //console.log(bins[j][k])
         if (k==0) {
           newnames[j] = bins[j][k].name + " (" + +bins[j][k][selection] + "%)"
         } else {
@@ -87,8 +78,6 @@
         }
       }
     }
-
-    console.log(newnames)
   
     // Y axis: scale and draw:
     var y = d3.scaleLinear()
@@ -97,7 +86,7 @@
     svg.append("g")
         .call(d3.axisLeft(y));
   
-    // Add a tooltip div. Here I define the general feature of the tooltip: stuff that do not depend on the data point.
+    // Add a tooltip div. 
     // Its opacity is set to 0: we don't see it by default.
     var tooltip = d3.select("#my_dataviz")
       .append("div")
@@ -117,6 +106,7 @@
         .duration(100)
         .style("opacity", 1)
       tooltip
+      //add the names and scores to the tooltips
         .text(newnames[(d.x0/10)])
         .style("left", (d3.mouse(this)[0]+20) + "px")
         .style("top", (d3.mouse(this)[1]) + "px")
@@ -167,12 +157,15 @@
     	.on("change", function(d){
         	selectedGroup = document.getElementById("dropdown");
       selection = selectedGroup.value;
-      //if(selection=="Select Assignment") { print("i won't work")};
-      console.log(selection);
+      //if teacher selects an assignment, update the graphic
       if(selection!="Select Assingment") {
         svg.selectAll("*").remove();
         d3.selectAll(".tooltip").remove();
         updateChart(selection);
+      //otherwise, screen is blank (except for dropdown menu)
+      } else {
+        svg.selectAll("*").remove();
+        d3.selectAll(".tooltip").remove();
       }
 
          }); //end of on function
