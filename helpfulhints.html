@@ -182,32 +182,32 @@ summary {
 
 <div id="helpful-hints" class="section level2">
 <h2>Helpful Hints</h2>
-<ol style="list-style-type: decimal">
-<li>Don’t build anything from scratch!</li>
-</ol>
+<div id="dont-build-anything-from-scratch" class="section level4">
+<h4>1. Don’t build anything from scratch!</h4>
 <p>As you will probably notice in the later tutorials (where I tackled projects specifically for the AP-CAT site), none of the visualizations were built from scratch. All of them used existing code as a starting point and made adjustments to tailor the visualizations to the specific needs of the AP-CAT project. One of my favorite sources for inspiration and code is <a href="https://d3js.org/" class="uri">https://d3js.org/</a>, specifically <a href="https://observablehq.com/@d3/gallery" class="uri">https://observablehq.com/@d3/gallery</a>, which shows examples of many visualizations.</p>
 <p>Even smaller elements do not need to be built from scratch. For example, in the teacher histogram visualization, I used existing code to create the main visualization (the histogram) as well as to create a smaller element (the dropdown menu). Also, in the collapsible tree visualization, I used existing code to draw the path of the maple leaves and create the tooltip.</p>
-<ol start="2" style="list-style-type: decimal">
-<li>The Console</li>
-</ol>
+</div>
+<div id="the-console" class="section level4">
+<h4>2. The Console</h4>
 <p>The console.log() command is your best friend for debugging and I used it many times throughout the tutorial series.</p>
 <p>To inspect the console, right click on the html page and select the “Inspect” option. A side bar will appear on the right side of the screen, and will initially show the “Elements” of the page. The “Elements” show the code associated with the html page, and inspecting the elements of pages can help you find existing code to use in your project. For example, the code for the maple leaf shape (in the collapsible tree tutorial) came from the “Elements” of a page showing a maple leaf.</p>
 <p>Even more useful than “Elements” is the “Console” associated with the page. The “Console” is the second option on the sidebar. In most cases, the console will not show anything when you click on it. However, if there are errors with your code, they will appear in the console. Additionally, you can print things to the console using the console.log() command. Printing elements of your code to the console can give you a better understanding of these elements. The collapsible tree and teacher histogram tutorials show examples of how to use the console.log() command while building visualizations.</p>
-<ol start="3" style="list-style-type: decimal">
-<li>Comments</li>
-</ol>
+</div>
+<div id="comments" class="section level4">
+<h4>3. Comments</h4>
 <p>As you probably gathered from the tutorials, “//” denotes a comment in d3. You can comment and uncomment large sections of code using shortcuts specific to your operating system and choice of text editor. I use Visual Studio Code and have a Mac, so my shortcuts are:</p>
 <p>Comment large sections: Cmd+K+C Uncomment large sections: Cmd+K+U</p>
 <p>You can search for other shortcuts online to find the ones specific to your computer and text editor!</p>
-<ol start="4" style="list-style-type: decimal">
-<li>Version of d3</li>
-</ol>
+</div>
+<div id="version-of-d3" class="section level4">
+<h4>4. Version of d3</h4>
 <p>Most of these tutorials use version 3 of d3 (with the exception of the teacher histogram tutorial, which uses version 4). It does not really matter which version you use because all of them can create great visualizions. However, it is important to note that code from different versions is not compatible. For example, if you start with existing code which creates a bar chart in d3 version 5 and then try to add a tooltip with code written for version 3, it will not work. Make sure the correct version is accessed in the beginning of your code and that all subsequent code is written for the same version. As a reminder, you specify the version of d3 in this line of code:</p>
 <pre class="js"><code>&lt;script src=&quot;http://d3js.org/d3.v3.min.js&quot;&gt;&lt;/script&gt;</code></pre>
 <script type="text/javascript">
 <script src="http://d3js.org/d3.v3.min.js"></script>
 </script>
 <p>Here, “d3.v3” specifies that we are using version 3 of d3.</p>
+</div>
 </div>
 
 
